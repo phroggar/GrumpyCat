@@ -93,15 +93,21 @@ const REFLECTIONS = {
  * @returns {string} Reflektierter Text
  */
 function reflect(text) {
-  // Längere Phrasen zuerst ersetzen (Reihenfolge wichtig)
+  // Längere Phrasen zuerst, damit "ich fühle mich" vor "ich fühle" und "ich" greift.
   const keys = Object.keys(REFLECTIONS).sort((a, b) => b.length - a.length);
-  let result = text;
-  for (const key of keys) {
-    // Wortgrenzen beachten (einfache Variante mit RegExp)
-    const re = new RegExp(`\\b${key}\\b`, 'gi');
-    result = result.replace(re, REFLECTIONS[key]);
-  }
-  return result;
+
+  // Wortgrenze-Ersatz der auch Umlaute berücksichtigt:
+  // (?<![a-zäöüßA-ZÄÖÜ]) / (?![a-zäöüßA-ZÄÖÜ]) statt \b
+  const boundary = '(?<![a-zA-ZäöüßÄÖÜ])';
+  const boundaryEnd = '(?![a-zA-ZäöüßÄÖÜ])';
+
+  // Kombinierter RegExp für einen einzigen Durchlauf → kein Double-Replacement
+  const combined = new RegExp(
+    keys.map(k => `${boundary}(${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})${boundaryEnd}`).join('|'),
+    'gi'
+  );
+
+  return text.replace(combined, match => REFLECTIONS[match.toLowerCase()] ?? match);
 }
 
 /**
@@ -143,7 +149,7 @@ const ELIZA_RULES = [
   {
     pattern: /ich bin\s+(.+)/i,
     responses: [
-      'Warum bist $1?',
+      'Warum bist Du $1?',
       'Schon lange $1?',
       'Und was soll ich damit anfangen, dass $1?',
       'Interessant. Ich bin eine Katze. Wir haben nichts gemeinsam.',
