@@ -38,30 +38,30 @@
 
 :root {
 
-  /* --- Colour Palette --- */
-  /* Primary brand colour and its scale */
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-500: #3b82f6;
-  --color-primary:     #2563eb;  /* main interactive colour */
-  --color-primary-700: #1d4ed8;
-  --color-primary-900: #1e3a8a;
+  /* --- Colour Palette — Grumpy Dark Theme --- */
+  /* Primärfarbe: gedämpftes Lila/Grau statt knalligem Blau */
+  --color-primary-100: #2d2d44;
+  --color-primary-200: #3a3a55;
+  --color-primary-500: #7c6f9f;
+  --color-primary:     #9b8ec4;  /* main interactive colour */
+  --color-primary-700: #b8aed8;
+  --color-primary-900: #d4cce8;
 
-  /* Neutral scale — used for text, borders, backgrounds */
-  --color-neutral-50:  #f8fafc;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-300: #cbd5e1;
-  --color-neutral-500: #64748b;
-  --color-neutral-700: #334155;
-  --color-neutral-900: #0f172a;
+  /* Neutral scale — dunkle Töne für das Grumpy-Theme */
+  --color-neutral-50:  #1a1a2e;
+  --color-neutral-100: #16213e;
+  --color-neutral-200: #0f3460;
+  --color-neutral-300: #2d2d44;
+  --color-neutral-500: #8892a4;
+  --color-neutral-700: #b0bac8;
+  --color-neutral-900: #e8eaf0;
 
   /* Semantic colours */
-  --color-text:        var(--color-neutral-900);
-  --color-text-muted:  var(--color-neutral-500);
-  --color-bg:          #ffffff;
-  --color-bg-alt:      var(--color-neutral-50);
-  --color-border:      var(--color-neutral-200);
+  --color-text:        #e8eaf0;
+  --color-text-muted:  #8892a4;
+  --color-bg:          #1a1a2e;
+  --color-bg-alt:      #16213e;
+  --color-border:      #2d2d44;
   --color-focus-ring:  var(--color-primary);
 
   /* Status colours */
@@ -917,6 +917,274 @@ small, .text-sm {
    Basic improvements for printed output.
    Remove if you don't need them.
    ============================================================ */
+
+
+/* ============================================================
+   16. GRUMPY CAT CHAT — KOMPONENTEN
+   Chat-UI: Fenster, Nachrichten, Eingabe, Gedulds-Anzeige.
+   ============================================================ */
+
+/* Vollbild-Layout: Header + Chat + Footer */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  padding: var(--space-4);
+  background: var(--color-bg);
+}
+
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--container-narrow);
+  margin-inline: auto;
+  gap: var(--space-3);
+}
+
+/* --- Chatverlauf-Fenster --- */
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--color-bg-alt);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  min-height: 300px;
+  max-height: calc(100dvh - 220px);
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar dezent stylen (Webkit) */
+.chat-window::-webkit-scrollbar { width: 6px; }
+.chat-window::-webkit-scrollbar-track { background: transparent; }
+.chat-window::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+/* --- Nachrichtenliste --- */
+.chat-messages {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* --- Einzelne Nachricht --- */
+.chat-message {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: 85%;
+}
+
+/* Bot-Nachrichten: links ausgerichtet */
+.chat-message--bot {
+  align-self: flex-start;
+}
+
+/* User-Nachrichten: rechts ausgerichtet */
+.chat-message--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+/* Avatar-Emoji */
+.chat-avatar {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-bottom: var(--space-1);
+}
+
+/* Sprechblase */
+.chat-bubble {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.chat-message--bot .chat-bubble {
+  background: var(--color-neutral-100);
+  color: var(--color-text);
+  border-bottom-left-radius: var(--radius-sm);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.chat-message--user .chat-bubble {
+  background: var(--color-primary-200);
+  color: var(--color-text);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.chat-bubble p {
+  margin: 0;
+}
+
+/* Zeitstempel */
+.chat-time {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Tipp-Indikator (drei Punkte) */
+.chat-message--typing .chat-bubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-block: var(--space-4);
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-6px); opacity: 1; }
+}
+
+/* --- Eingabebereich --- */
+.chat-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.chat-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chat-input {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-alt);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  min-width: 0;
+}
+
+.chat-input::placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(155 142 196 / 0.2);
+}
+
+/* Senden-Button */
+.btn--send {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-bg);
+  border: 2px solid transparent;
+  font-size: var(--font-size-base);
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn--send:hover {
+  background: var(--color-primary-700);
+  color: var(--color-bg);
+}
+
+.btn--send:active {
+  transform: scale(0.93);
+}
+
+.chat-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  font-style: italic;
+}
+
+/* --- Gedulds-Anzeige im Header --- */
+.patience-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.patience-label {
+  white-space: nowrap;
+  font-weight: var(--font-weight-medium);
+}
+
+.patience-bar {
+  display: inline-block;
+  width: 60px;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.patience-fill {
+  display: block;
+  height: 100%;
+  width: 20%;  /* wird per JS gesetzt */
+  background: #e05252;
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow), background-color var(--transition-slow);
+}
+
+.patience-text {
+  white-space: nowrap;
+  font-style: italic;
+}
+
+/* Header-Anpassung für dunkles Theme */
+.site-header {
+  background-color: rgb(26 26 46 / 0.95);
+  border-bottom-color: var(--color-border);
+}
+
+/* Footer-Anpassung */
+.site-footer {
+  background: var(--color-bg-alt);
+  border-top-color: var(--color-border);
+  padding-block: var(--space-4);
+}
+
+.site-footer .container {
+  justify-content: center;
+}
+
+/* Mobile: Gedulds-Anzeige etwas kompakter */
+@media (max-width: 400px) {
+  .patience-bar { width: 40px; }
+  .patience-label { display: none; }
+}
 
 @media print {
   .site-header,

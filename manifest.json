@@ -1,9 +1,9 @@
 {
-  "_comment": "PWA Web App Manifest — OPTIONAL. Remove this file and the <link rel='manifest'> tag in index.html if you do not need PWA features.",
+  "_comment": "PWA Web App Manifest — Grumpy Cat Chat",
 
-  "name": "App Name",
-  "short_name": "App",
-  "description": "A short description of what this app does.",
+  "name": "Grumpy Cat Chat",
+  "short_name": "GrumpyChat",
+  "description": "Ein mürrischer Katzen-Chatbot mit trockenem Humor. Keine echte KI – nur echte Genervtheit.",
 
   "start_url": "./",
   "scope": "./",
@@ -11,13 +11,13 @@
   "display": "standalone",
   "orientation": "any",
 
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
 
-  "lang": "en",
+  "lang": "de",
   "dir": "ltr",
 
-  "categories": ["utilities"],
+  "categories": ["entertainment", "social"],
 
   "icons": [
     {

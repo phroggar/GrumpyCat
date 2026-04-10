@@ -1,384 +1,153 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <!--
   ============================================================
-  Vibe Boilerplate — index.html
+  Grumpy Cat Chatbot — index.html
   ============================================================
-  A dependency-free, locally-runnable HTML/CSS/JS starter.
-  No build step. No frameworks. No CDN. Just open and edit.
-
-  CUSTOMISE THIS FILE:
-  1. Update <title> and all meta content.
-  2. Replace "App Name" with your project name globally.
-  3. Add/remove sections to match your layout needs.
-  4. Link additional CSS or JS files as needed (local only).
+  Eine dependency-free PWA mit sarkastischer Katzen-Persönlichkeit.
+  Kein Build-Step. Keine Frameworks. Einfach öffnen und chatten.
   ============================================================
 -->
 
 <head>
   <!-- ─────────────────────────────────────────────
        CHARACTER ENCODING & VIEWPORT
-       Always the first two meta tags.
   ───────────────────────────────────────────── -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- ─────────────────────────────────────────────
        PRIMARY META
-       Update these for every project.
   ───────────────────────────────────────────── -->
-  <title>App Name</title>
-  <meta name="description" content="A short description of what this app does. Keep it under 160 characters." />
-  <meta name="author" content="Your Name" />
+  <title>Grumpy Cat Chat 😾</title>
+  <meta name="description" content="Ein mürrischer Katzen-Chatbot mit trockenem Humor. Keine echte KI – nur echte Genervtheit." />
+  <meta name="author" content="Grumpy Cat" />
 
   <!-- ─────────────────────────────────────────────
        OPEN GRAPH / SOCIAL SHARING
-       Used by social platforms when your URL is shared.
-       Replace all placeholder values.
   ───────────────────────────────────────────── -->
-  <meta property="og:title" content="App Name" />
-  <meta property="og:description" content="A short description of what this app does." />
+  <meta property="og:title" content="Grumpy Cat Chat 😾" />
+  <meta property="og:description" content="Ein mürrischer Katzen-Chatbot mit trockenem Humor." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://yourusername.github.io/your-repo/" />
-  <meta property="og:image" content="https://yourusername.github.io/your-repo/assets/icons/og-image.png" />
 
   <!-- ─────────────────────────────────────────────
        FAVICON
-       Place your icon files in /assets/icons/
-       SVG favicon is modern and scales perfectly.
   ───────────────────────────────────────────── -->
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
-  <link rel="icon" href="assets/icons/favicon.ico" sizes="any" /><!-- fallback -->
+  <link rel="icon" href="assets/icons/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
 
   <!-- ─────────────────────────────────────────────
-       PWA MANIFEST (OPTIONAL)
-       Remove this line if you are not using PWA features.
-       See manifest.json and service-worker.js for details.
+       PWA MANIFEST
   ───────────────────────────────────────────── -->
   <link rel="manifest" href="manifest.json" />
-
-  <!-- ─────────────────────────────────────────────
-       THEME COLOR
-       Controls the browser chrome color on mobile.
-       Match this to your --color-primary in style.css.
-  ───────────────────────────────────────────── -->
-  <meta name="theme-color" content="#2563eb" />
+  <meta name="theme-color" content="#1a1a2e" />
 
   <!-- ─────────────────────────────────────────────
        STYLESHEET
-       Single CSS file. Add more <link> tags here
-       if you split your CSS into modules.
   ───────────────────────────────────────────── -->
   <link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body>
 
+  <!-- Skip link for keyboard users -->
+  <a class="skip-link" href="#chat-input">Zum Eingabefeld springen</a>
+
   <!-- ─────────────────────────────────────────────
-       SKIP LINK
-       Allows keyboard users to jump past the nav
-       directly to main content. Required for WCAG AA.
-       The target is the <main> element below.
-  ───────────────────────────────────────────── -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
-
-  <!-- ═══════════════════════════════════════════
        SITE HEADER
-       Contains branding and primary navigation.
-       Role="banner" is implied by <header> at page level.
-  ═══════════════════════════════════════════ -->
-  <header class="site-header">
+  ───────────────────────────────────────────── -->
+  <header class="site-header" role="banner">
     <div class="container">
-
-      <!-- Logo / Brand -->
-      <a href="/" class="site-logo" aria-label="App Name — Home">
-        <!-- Replace this SVG with your own logo, or use a text mark. -->
-        <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-          <rect width="32" height="32" rx="8" fill="currentColor" />
-          <text x="16" y="22" text-anchor="middle" fill="white" font-size="16" font-family="sans-serif" font-weight="bold">A</text>
-        </svg>
-        <span class="logo-text">App Name</span>
-      </a>
-
-      <!-- Primary Navigation -->
-      <nav class="site-nav" aria-label="Primary navigation">
-        <!--
-          MOBILE MENU TOGGLE
-          Controlled by js/main.js — toggles aria-expanded
-          and the .is-open class on the nav.
-        -->
-        <button
-          class="nav-toggle"
-          aria-controls="primary-nav-list"
-          aria-expanded="false"
-          aria-label="Open navigation menu"
-        >
-          <!-- Hamburger icon — purely decorative -->
-          <span class="nav-toggle-bar" aria-hidden="true"></span>
-          <span class="nav-toggle-bar" aria-hidden="true"></span>
-          <span class="nav-toggle-bar" aria-hidden="true"></span>
-        </button>
-
-        <ul class="nav-list" id="primary-nav-list" role="list">
-          <li><a href="#features" class="nav-link">Features</a></li>
-          <li><a href="#about"    class="nav-link">About</a></li>
-          <li><a href="#contact"  class="nav-link">Contact</a></li>
-        </ul>
-      </nav>
-
-    </div><!-- /.container -->
+      <span class="site-logo" aria-label="Grumpy Cat Chat">
+        <span class="logo-icon" aria-hidden="true">😾</span>
+        Grumpy Cat Chat
+      </span>
+      <!-- Gedulds-Anzeige -->
+      <div class="patience-meter" aria-live="polite" aria-label="Geduld der Katze">
+        <span class="patience-label">Geduld:</span>
+        <span class="patience-bar" role="meter" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">
+          <span class="patience-fill" id="patience-fill"></span>
+        </span>
+        <span class="patience-text" id="patience-text">niedrig</span>
+      </div>
+    </div>
   </header>
 
-  <!-- ═══════════════════════════════════════════
-       MAIN CONTENT
-       id="main-content" is the skip-link target.
-  ═══════════════════════════════════════════ -->
-  <main id="main-content">
+  <!-- ─────────────────────────────────────────────
+       MAIN CONTENT — CHAT
+  ───────────────────────────────────────────── -->
+  <main id="main-content" class="chat-main">
+    <div class="chat-wrapper">
 
-    <!-- ─────────────────────────────────────────────
-         HERO SECTION
-         Full-width introductory section with a headline,
-         sub-copy, and primary CTA.
-         Remove or swap out for your own opening section.
-    ───────────────────────────────────────────── -->
-    <section class="section section--hero" aria-labelledby="hero-heading">
-      <div class="container container--narrow">
-        <h1 id="hero-heading" class="hero-heading">
-          Build something real,<br />without the baggage.
-        </h1>
-        <p class="hero-subheading">
-          A clean, dependency-free starter for web apps that run anywhere —
-          locally, on GitHub Pages, or any static host. No build step required.
-        </p>
-        <div class="hero-actions">
-          <a href="#features" class="btn btn--primary">Explore features</a>
-          <a href="https://github.com/yourusername/your-repo" class="btn btn--outline" target="_blank" rel="noopener noreferrer">
-            View on GitHub
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ─────────────────────────────────────────────
-         FEATURES SECTION
-         Use a card grid to highlight key items.
-         Add or remove <article> cards as needed.
-    ───────────────────────────────────────────── -->
-    <section class="section" id="features" aria-labelledby="features-heading">
-      <div class="container">
-        <h2 id="features-heading" class="section-heading">Features</h2>
-        <p class="section-subheading">What this boilerplate gives you out of the box.</p>
-
-        <ul class="card-grid" role="list">
-
-          <li class="card">
-            <div class="card-icon" aria-hidden="true">&#128194;</div>
-            <h3 class="card-title">Zero dependencies</h3>
-            <p class="card-body">No npm, no bundler, no framework. Open the folder in your browser and it works.</p>
+      <!-- Chatverlauf -->
+      <section class="chat-window" aria-label="Chatverlauf" aria-live="polite" aria-relevant="additions">
+        <ol class="chat-messages" id="chat-messages" role="list">
+          <!-- Begrüßungsnachricht vom Bot -->
+          <li class="chat-message chat-message--bot">
+            <span class="chat-avatar" aria-hidden="true">😾</span>
+            <div class="chat-bubble">
+              <p>Oh. Du schon wieder. Was willst du?</p>
+              <time class="chat-time" datetime="">Gerade eben</time>
+            </div>
           </li>
+        </ol>
+      </section>
 
-          <li class="card">
-            <div class="card-icon" aria-hidden="true">&#9989;</div>
-            <h3 class="card-title">Accessible by default</h3>
-            <p class="card-body">Semantic HTML, visible focus styles, skip links, ARIA where appropriate, and reduced-motion support.</p>
-          </li>
-
-          <li class="card">
-            <div class="card-icon" aria-hidden="true">&#128241;</div>
-            <h3 class="card-title">Responsive layout</h3>
-            <p class="card-body">Mobile-first CSS with a fluid container, flexible grid, and no hardcoded breakpoint assumptions.</p>
-          </li>
-
-          <li class="card">
-            <div class="card-icon" aria-hidden="true">&#127760;</div>
-            <h3 class="card-title">PWA-ready (optional)</h3>
-            <p class="card-body">Optional manifest and service worker are included. Enable them when you're ready for offline support.</p>
-          </li>
-
-          <li class="card">
-            <div class="card-icon" aria-hidden="true">&#128260;</div>
-            <h3 class="card-title">GitHub Pages friendly</h3>
-            <p class="card-body">Deploy by pushing to a branch. All paths are relative. Includes a 404.html for SPA-style fallback.</p>
-          </li>
-
-          <li class="card">
-            <div class="card-icon" aria-hidden="true">&#9998;</div>
-            <h3 class="card-title">AI-extendable</h3>
-            <p class="card-body">Structured and commented for easy collaboration with AI assistants. See the prompting guide in README.</p>
-          </li>
-
-        </ul>
-      </div>
-    </section>
-
-    <!-- ─────────────────────────────────────────────
-         ABOUT SECTION
-         A generic content section. Use it for explanatory
-         prose, a mission statement, or app documentation.
-    ───────────────────────────────────────────── -->
-    <section class="section section--alt" id="about" aria-labelledby="about-heading">
-      <div class="container container--narrow">
-        <h2 id="about-heading" class="section-heading">About</h2>
-        <p>
-          This is a placeholder about section. Replace this content with a description of your project,
-          its goals, its audience, or any other introductory information.
-        </p>
-        <p>
-          You can add as many paragraphs, lists, images, or other HTML elements as needed.
-          The layout will remain readable and accessible on all screen sizes.
-        </p>
-      </div>
-    </section>
-
-    <!-- ─────────────────────────────────────────────
-         CONTACT / FORM SECTION
-         A starter contact form with accessible markup.
-         Wire up submission logic in js/main.js.
-         For static hosting, use a form service like
-         Formspree, Netlify Forms, or similar.
-    ───────────────────────────────────────────── -->
-    <section class="section" id="contact" aria-labelledby="contact-heading">
-      <div class="container container--narrow">
-        <h2 id="contact-heading" class="section-heading">Contact</h2>
-        <p>Have a question or feedback? Fill in the form below.</p>
-
-        <!--
-          FORM NOTES:
-          - action="" should point to your form handler URL.
-          - For static/GitHub Pages use, integrate with
-            Formspree (https://formspree.io) or similar.
-          - novalidate disables native browser validation;
-            custom validation is handled in js/main.js.
-        -->
-        <form
-          class="form"
-          id="contact-form"
-          action="#"
-          method="POST"
-          novalidate
-          aria-label="Contact form"
-        >
-
-          <div class="form-group">
-            <label class="form-label" for="field-name">
-              Full name <span class="form-required" aria-hidden="true">*</span>
-            </label>
-            <input
-              class="form-input"
-              type="text"
-              id="field-name"
-              name="name"
-              autocomplete="name"
-              required
-              aria-required="true"
-              aria-describedby="field-name-error"
-              placeholder="Jane Smith"
-            />
-            <span class="form-error" id="field-name-error" role="alert" aria-live="polite"></span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="field-email">
-              Email address <span class="form-required" aria-hidden="true">*</span>
-            </label>
-            <input
-              class="form-input"
-              type="email"
-              id="field-email"
-              name="email"
-              autocomplete="email"
-              required
-              aria-required="true"
-              aria-describedby="field-email-error"
-              placeholder="jane@example.com"
-            />
-            <span class="form-error" id="field-email-error" role="alert" aria-live="polite"></span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="field-message">
-              Message <span class="form-required" aria-hidden="true">*</span>
-            </label>
-            <textarea
-              class="form-input form-textarea"
-              id="field-message"
-              name="message"
-              rows="5"
-              required
-              aria-required="true"
-              aria-describedby="field-message-error"
-              placeholder="Your message here…"
-            ></textarea>
-            <span class="form-error" id="field-message-error" role="alert" aria-live="polite"></span>
-          </div>
-
-          <!-- Form-level status message (success/error after submit) -->
-          <div
-            class="form-status"
-            id="form-status"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          ></div>
-
-          <button class="btn btn--primary" type="submit">Send message</button>
-
+      <!-- Eingabebereich -->
+      <div class="chat-input-area">
+        <form class="chat-form" id="chat-form" autocomplete="off" novalidate>
+          <label for="chat-input" class="sr-only">Nachricht eingeben</label>
+          <input
+            type="text"
+            id="chat-input"
+            class="chat-input"
+            placeholder="Schreib was… wenn du musst."
+            maxlength="200"
+            autocomplete="off"
+            spellcheck="true"
+            aria-label="Nachricht an Grumpy Cat"
+          />
+          <button type="submit" class="btn btn--send" aria-label="Nachricht senden">
+            <span aria-hidden="true">➤</span>
+            <span class="sr-only">Senden</span>
+          </button>
         </form>
+        <p class="chat-hint">Tipp: Frag nach Hilfe, sag Hallo oder erzähl einen Witz. Erwarte nichts.</p>
       </div>
-    </section>
 
+    </div>
   </main>
-  <!-- /#main-content -->
 
-  <!-- ═══════════════════════════════════════════
+  <!-- ─────────────────────────────────────────────
        SITE FOOTER
-       Role="contentinfo" is implied by <footer>
-       at the page level.
-  ═══════════════════════════════════════════ -->
-  <footer class="site-footer">
+  ───────────────────────────────────────────── -->
+  <footer class="site-footer" role="contentinfo">
     <div class="container">
       <p class="footer-copy">
-        &copy; <span id="footer-year"></span> App Name. Built with HTML, CSS &amp; vanilla JS.
+        😾 Grumpy Cat Chat &copy; <span id="footer-year"></span> &mdash;
+        Keine echte KI. Nur echte Genervtheit.
       </p>
-      <nav class="footer-nav" aria-label="Footer navigation">
-        <ul role="list">
-          <li><a href="#features">Features</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li><a href="https://github.com/yourusername/your-repo" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-        </ul>
-      </nav>
     </div>
   </footer>
 
   <!-- ─────────────────────────────────────────────
-       SCRIPTS
-       Placed at the end of <body> so the DOM is
-       fully parsed before JS runs. Use type="module"
-       if you want ES module import/export syntax.
-       (Note: modules require a local server or GitHub
-       Pages — they won't run from file:// in some browsers.)
+       SERVICE WORKER REGISTRATION
   ───────────────────────────────────────────── -->
-  <script src="js/main.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(reg => console.log('[SW] Registriert:', reg.scope))
+          .catch(err => console.warn('[SW] Registrierung fehlgeschlagen:', err));
+      });
+    }
+  </script>
 
-  <!--
-    PWA SERVICE WORKER REGISTRATION (OPTIONAL)
-    Uncomment the block below if you want PWA support.
-    See service-worker.js for details and limitations.
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker
-            .register('./service-worker.js')
-            .then(reg  => console.log('[SW] Registered:', reg.scope))
-            .catch(err => console.error('[SW] Registration failed:', err));
-        });
-      }
-    </script>
-  -->
+  <!-- Haupt-JS -->
+  <script src="js/main.js" defer></script>
 
 </body>
 </html>

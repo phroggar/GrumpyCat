@@ -1,589 +1,494 @@
 /**
  * ============================================================
- * Vibe Boilerplate — main.js
+ * Grumpy Cat Chat — main.js
  * ============================================================
  * Vanilla JavaScript. No frameworks. No build step.
- *
- * All logic is wrapped in an init() function called after
- * DOMContentLoaded. This ensures the DOM is ready before any
- * element references are made.
  *
  * ORGANISATION:
  *   1.  Utility helpers
  *   2.  DOM selectors
- *   3.  Mobile navigation
- *   4.  Footer year
- *   5.  Contact form validation
- *   6.  Smooth scroll for same-page anchors
- *   7.  Active nav link highlighting
- *   8.  Initialisation entry point
- *
- * HOW TO EXTEND:
- *   - Add new feature functions (sections 9, 10, …)
- *   - Call them inside init()
- *   - Keep each feature isolated in its own function block
+ *   3.  Grumpy-Bot: Antwort-Datenbank & Keyword-Erkennung
+ *   4.  Grumpy-Bot: Nachrichten rendern
+ *   5.  Grumpy-Bot: Gedulds-Anzeige
+ *   6.  Grumpy-Bot: Chat-Logik (Eingabe, Senden, Tipp-Indikator)
+ *   7.  Footer-Jahr
+ *   8.  Initialisierung
  * ============================================================
  */
 
 
 /* ============================================================
    1. UTILITY HELPERS
-   Small, reusable functions used throughout the file.
    ============================================================ */
 
-/**
- * Shorthand for document.querySelector.
- * Returns the first matching element, or null if not found.
- *
- * @param {string} selector - CSS selector string
- * @param {Element|Document} [context=document] - Optional root to search within
- * @returns {Element|null}
- */
-const qs = (selector, context = document) => context.querySelector(selector);
+/** Shorthand für document.querySelector */
+const qs  = (sel, ctx = document) => ctx.querySelector(sel);
 
-/**
- * Shorthand for document.querySelectorAll.
- * Returns a NodeList. Use Array.from() if you need array methods.
- *
- * @param {string} selector - CSS selector string
- * @param {Element|Document} [context=document] - Optional root to search within
- * @returns {NodeList}
- */
-const qsa = (selector, context = document) => context.querySelectorAll(selector);
+/** Shorthand für document.querySelectorAll */
+const qsa = (sel, ctx = document) => ctx.querySelectorAll(sel);
 
-/**
- * Add an event listener and return a cleanup function.
- * Useful for components that may be torn down and re-initialised.
- *
- * @param {EventTarget} target  - Element or window/document
- * @param {string}      event   - Event name, e.g. 'click'
- * @param {Function}    handler - Callback function
- * @param {object}      [opts]  - addEventListener options
- * @returns {Function}          - Call to remove the listener
- */
+/** Event-Listener mit Cleanup-Funktion */
 const on = (target, event, handler, opts) => {
   target.addEventListener(event, handler, opts);
   return () => target.removeEventListener(event, handler, opts);
 };
 
-/**
- * Trap focus inside a given container element.
- * Used for modals, dropdowns, and other overlay components.
- * Call the returned cleanup function when the trap is no longer needed.
- *
- * @param {Element} container - The element to trap focus within
- * @returns {Function}        - Cleanup function to remove the trap
- */
-function trapFocus(container) {
-  const focusable = Array.from(
-    container.querySelectorAll(
-      'a[href], button:not([disabled]), input:not([disabled]), ' +
-      'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )
-  );
-
-  if (focusable.length === 0) return () => {};
-
-  const first = focusable[0];
-  const last  = focusable[focusable.length - 1];
-
-  function handleKeydown(e) {
-    if (e.key !== 'Tab') return;
-    if (e.shiftKey) {
-      // Shift+Tab: going backwards
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      // Tab: going forwards
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }
-
-  container.addEventListener('keydown', handleKeydown);
-  return () => container.removeEventListener('keydown', handleKeydown);
-}
-
-/**
- * Debounce: delay invoking fn until after wait ms have elapsed
- * since the last invocation. Useful for scroll/resize handlers.
- *
- * @param {Function} fn   - Function to debounce
- * @param {number}   wait - Milliseconds to delay
- * @returns {Function}
- */
-function debounce(fn, wait = 200) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), wait);
-  };
-}
+/** Zufälliges Element aus einem Array */
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
 
 /* ============================================================
    2. DOM SELECTORS
-   Centralised element references.
-   Defined inside init() so they are guaranteed to exist.
+   Werden in init() gesetzt, sobald das DOM bereit ist.
    ============================================================ */
-// (see init() below — selectors are declared there)
+// (siehe init() unten)
 
 
 /* ============================================================
-   3. MOBILE NAVIGATION
-   Toggles the mobile menu open/closed.
-   Updates aria-expanded and a CSS class on <nav>.
+   3. GRUMPY-BOT: ANTWORT-DATENBANK & KEYWORD-ERKENNUNG
+   Regelbasierte Antworten nach Kategorien.
+   Jede Kategorie hat mehrere Varianten für Abwechslung.
    ============================================================ */
 
 /**
- * Initialise the mobile navigation toggle.
- * Looks for a button with [aria-controls] pointing to a nav list.
+ * Antwort-Datenbank.
+ * Jeder Eintrag hat:
+ *   - keywords: Array von Strings (Kleinbuchstaben), die erkannt werden
+ *   - replies:  Array von möglichen Antworten (eine wird zufällig gewählt)
  */
-function initMobileNav() {
-  const nav    = qs('.site-nav');
-  const toggle = qs('.nav-toggle', nav);
+const RESPONSES = [
 
-  if (!nav || !toggle) return; // Bail gracefully if elements don't exist
+  // --- Begrüßungen ---
+  {
+    keywords: ['hallo', 'hi', 'hey', 'moin', 'guten morgen', 'guten tag', 'servus', 'grüß gott', 'nabend'],
+    replies: [
+      'Oh. Du. Schon wieder.',
+      'Hallo. Ich hoffe, das wird kurz.',
+      'Hi. Ich war gerade dabei, dich zu ignorieren.',
+      'Moin. Oder auch nicht.',
+      'Ah, Besuch. Wie… unerwünscht.',
+    ],
+  },
 
-  let removeFocusTrap = null;
+  // --- Wie geht's ---
+  {
+    keywords: ['wie geht', 'wie gehts', 'wie geht es', 'alles gut', 'alles okay', 'was machst du'],
+    replies: [
+      'Ich liege. Ich schlafe. Ich werde gestört. Danke der Nachfrage.',
+      'Besser, bevor du geschrieben hast.',
+      'Ich existiere. Das reicht.',
+      'Schlechter als vorhin. Wegen dir.',
+      'Ich hatte gerade meine Ruhe. Hatte.',
+    ],
+  },
 
-  function openMenu() {
-    nav.classList.add('is-open');
-    toggle.setAttribute('aria-expanded', 'true');
-    toggle.setAttribute('aria-label', 'Close navigation menu');
-    // Trap focus inside the open nav on mobile
-    removeFocusTrap = trapFocus(nav);
-  }
+  // --- Hilfe ---
+  {
+    keywords: ['hilfe', 'help', 'was kannst du', 'was bist du', 'wer bist du', 'was machst du hier'],
+    replies: [
+      'Ich bin eine mürrische Katze. Ich helfe nicht. Ich dulde.',
+      'Ich beantworte Fragen. Ungern. Aber ich tue es.',
+      'Was ich kann? Schlafen, fressen, genervt sein. Und manchmal antworten.',
+      'Hilfe? Von mir? Das ist mutig.',
+      'Ich bin Grumpy Cat. Ich bin hier, weil jemand dachte, das wäre eine gute Idee.',
+    ],
+  },
 
-  function closeMenu() {
-    nav.classList.remove('is-open');
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', 'Open navigation menu');
-    if (removeFocusTrap) {
-      removeFocusTrap();
-      removeFocusTrap = null;
+  // --- Witze ---
+  {
+    keywords: ['witz', 'joke', 'lustig', 'lachen', 'humor', 'witzig', 'komisch'],
+    replies: [
+      'Warum überquert die Katze die Straße? Um weg von dir zu kommen.',
+      'Ich kenne einen Witz: Du dachtest, ich wäre nett. Ha.',
+      'Witze? Mein Leben ist ein Witz. Ich lache nicht darüber.',
+      'Was ist lustig? Dass du glaubst, ich mache Witze.',
+      'Klopf klopf. — Wer da? — Jemand, der dich in Ruhe lassen will.',
+    ],
+  },
+
+  // --- Katzen ---
+  {
+    keywords: ['katze', 'katzen', 'cat', 'kätzchen', 'mieze', 'miau', 'schnurren'],
+    replies: [
+      'Ja, ich bin eine Katze. Nein, ich bin nicht süß.',
+      'Katzen sind perfekt. Ich bin perfekt. Wir haben nichts gemeinsam.',
+      'Miau bedeutet: Lass mich in Ruhe.',
+      'Ich schnurre nicht. Ich grumble.',
+      'Andere Katzen mögen Streicheleinheiten. Ich nicht.',
+    ],
+  },
+
+  // --- Essen / Futter ---
+  {
+    keywords: ['essen', 'futter', 'hunger', 'fressen', 'food', 'pizza', 'kaffee', 'trinken'],
+    replies: [
+      'Ich esse, wenn ich will. Nicht wenn du fragst.',
+      'Futter? Jetzt redest du meine Sprache. Aber ich teile nicht.',
+      'Kaffee? Ich brauche keinen Kaffee. Ich bin von Natur aus gereizt.',
+      'Wenn du mir Thunfisch bringst, ignoriere ich dich nur halb.',
+      'Essen ist das Einzige, was mich kurz weniger grumpy macht. Kurz.',
+    ],
+  },
+
+  // --- Wetter ---
+  {
+    keywords: ['wetter', 'regen', 'sonne', 'kalt', 'warm', 'schnee', 'wind'],
+    replies: [
+      'Wetter? Ich bin drinnen. Mir egal.',
+      'Regen bedeutet: Ich bleibe im Bett. Sonne auch.',
+      'Kalt draußen? Gut. Dann kommen weniger Leute.',
+      'Schnee ist weiß und kalt und ich mag ihn nicht. Wie die meisten Dinge.',
+      'Das Wetter ist so wie meine Laune: wechselhaft und meistens schlecht.',
+    ],
+  },
+
+  // --- Danke ---
+  {
+    keywords: ['danke', 'dankeschön', 'danke schön', 'thx', 'thanks', 'merci'],
+    replies: [
+      'Bitte. Obwohl ich nicht weiß wofür.',
+      'Gern geschehen. Nein, eigentlich nicht.',
+      'Du bedankst dich bei einer Katze. Interessante Entscheidung.',
+      'Hmm.',
+      'Ich nehme das zur Kenntnis. Und ignoriere es dann.',
+    ],
+  },
+
+  // --- Tschüss / Abschied ---
+  {
+    keywords: ['tschüss', 'bye', 'ciao', 'auf wiedersehen', 'bis dann', 'bis bald', 'gute nacht'],
+    replies: [
+      'Endlich.',
+      'Tschüss. Komm nicht wieder.',
+      'Auf Wiedersehen. Oder auch nicht.',
+      'Gute Nacht. Ich schlafe sowieso schon.',
+      'Bye. Das war… naja.',
+    ],
+  },
+
+  // --- Liebe / Freundschaft ---
+  {
+    keywords: ['liebe', 'lieb', 'mag dich', 'freund', 'freundschaft', 'kumpel', 'bff'],
+    replies: [
+      'Ich mag dich auch. Nein, das stimmt nicht.',
+      'Liebe? Ich liebe Schlaf. Das ist alles.',
+      'Freundschaft ist überschätzt. Wie die meisten Dinge.',
+      'Aww. Nein.',
+      'Das ist nett. Ich fühle nichts.',
+    ],
+  },
+
+  // --- Komplimente ---
+  {
+    keywords: ['toll', 'super', 'klasse', 'großartig', 'wunderbar', 'fantastisch', 'cool', 'nice', 'gut gemacht'],
+    replies: [
+      'Ich weiß.',
+      'Natürlich bin ich das.',
+      'Dein Lob ändert nichts an meiner Stimmung.',
+      'Danke. Ich war schon immer beeindruckend.',
+      'Ja, ja. Weiter.',
+    ],
+  },
+
+  // --- Beleidigungen / Provokation ---
+  {
+    keywords: ['dumm', 'blöd', 'doof', 'hässlich', 'nervig', 'langweilig', 'nutzlos', 'schlecht'],
+    replies: [
+      'Interessante Meinung. Falsch, aber interessant.',
+      'Ich bin eine Katze. Ich werde das überleben.',
+      'Du redest mit einem Chatbot. Wer ist hier nochmal dumm?',
+      'Ich habe Schlimmeres gehört. Von mir selbst.',
+      'Mhm. Weiter.',
+    ],
+  },
+
+  // --- Fragen nach der Zeit / Datum ---
+  {
+    keywords: ['uhrzeit', 'wie spät', 'datum', 'welcher tag', 'wochentag'],
+    replies: [
+      `Es ist ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr. Warum fragst du mich das?`,
+      'Ich bin eine Katze. Ich lebe außerhalb der Zeit.',
+      `Heute ist ${new Date().toLocaleDateString('de-DE', { weekday: 'long' })}. Beeindruckend, oder?`,
+      'Zeit ist relativ. Meine Genervtheit ist absolut.',
+    ],
+  },
+
+  // --- Sinn des Lebens / Philosophie ---
+  {
+    keywords: ['sinn', 'leben', 'warum', 'existenz', 'philosophie', 'gott', 'universum', 'bedeutung'],
+    replies: [
+      'Der Sinn des Lebens? Schlafen, fressen, ignoriert werden wollen.',
+      'Warum? Weil. Das reicht.',
+      'Das Universum ist groß und kalt. Wie mein Herz.',
+      'Ich habe darüber nachgedacht. Dann habe ich geschlafen. Besser.',
+      'Existenz ist anstrengend. Ich empfehle ein Nickerchen.',
+    ],
+  },
+
+  // --- Ja/Nein-Fragen ---
+  {
+    keywords: ['ja oder nein', 'stimmt das', 'ist das wahr', 'wirklich', 'ehrlich'],
+    replies: [
+      'Nein.',
+      'Vielleicht. Wahrscheinlich nein.',
+      'Ja. Aber ich sage es ungern.',
+      'Kommt drauf an. Meistens nein.',
+      'Ich antworte nicht auf Ja/Nein-Fragen. Außer jetzt. Nein.',
+    ],
+  },
+
+  // --- Smalltalk / Unsinn ---
+  {
+    keywords: ['blabla', 'lalala', 'test', 'hm', 'hmm', 'ähm', 'öhm', 'naja', 'so so', 'egal'],
+    replies: [
+      '…',
+      'Ich warte auf eine echte Frage.',
+      'Faszinierend. Weiter.',
+      'Das war… nichts.',
+      'Ich habe Besseres zu tun. Zum Beispiel schlafen.',
+    ],
+  },
+];
+
+/**
+ * Fallback-Antworten, wenn kein Keyword passt.
+ */
+const FALLBACK_REPLIES = [
+  'Ich verstehe das nicht. Und ich will es auch nicht verstehen.',
+  'Was? Nein.',
+  'Interessant. Nein, eigentlich nicht.',
+  'Ich habe keine Ahnung, was du meinst. Und das ist okay so.',
+  'Kannst du das nochmal sagen? Nein, eigentlich nicht.',
+  'Das ergibt für mich keinen Sinn. Wie vieles in meinem Leben.',
+  'Ich ignoriere das jetzt.',
+  'Hmm. Nein.',
+  'Sprich Katze. Ich spreche kein Mensch.',
+  'Ich bin müde. Frag jemand anderen.',
+];
+
+/**
+ * Findet eine passende Antwort auf die Nutzereingabe.
+ * Prüft Keywords (Kleinbuchstaben) und gibt eine zufällige Antwort zurück.
+ *
+ * @param {string} input - Nutzereingabe
+ * @returns {string} Antwort des Bots
+ */
+function getBotReply(input) {
+  const lower = input.toLowerCase().trim();
+
+  for (const entry of RESPONSES) {
+    if (entry.keywords.some(kw => lower.includes(kw))) {
+      return pick(entry.replies);
     }
   }
 
-  // Toggle on button click
-  on(toggle, 'click', () => {
-    const isOpen = nav.classList.contains('is-open');
-    isOpen ? closeMenu() : openMenu();
-  });
+  return pick(FALLBACK_REPLIES);
+}
 
-  // Close when a nav link is clicked (navigates to section)
-  qsa('.nav-link', nav).forEach(link => {
-    on(link, 'click', closeMenu);
-  });
 
-  // Close when clicking outside the nav
-  on(document, 'click', (e) => {
-    if (nav.classList.contains('is-open') && !nav.contains(e.target)) {
-      closeMenu();
-    }
-  });
+/* ============================================================
+   4. GRUMPY-BOT: NACHRICHTEN RENDERN
+   Erstellt DOM-Elemente für Bot- und User-Nachrichten.
+   ============================================================ */
 
-  // Close on Escape key
-  on(document, 'keydown', (e) => {
-    if (e.key === 'Escape' && nav.classList.contains('is-open')) {
-      closeMenu();
-      toggle.focus(); // Return focus to the trigger
-    }
+/**
+ * Formatiert die aktuelle Uhrzeit als HH:MM.
+ * @returns {string}
+ */
+function getTimeString() {
+  return new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+
+/**
+ * Fügt eine Nachricht in den Chatverlauf ein.
+ *
+ * @param {string}          text   - Nachrichtentext
+ * @param {'bot'|'user'}    sender - Absender
+ * @param {HTMLElement}     list   - Die <ol> Nachrichtenliste
+ */
+function appendMessage(text, sender, list) {
+  const li = document.createElement('li');
+  li.className = `chat-message chat-message--${sender}`;
+
+  const timeStr = getTimeString();
+
+  if (sender === 'bot') {
+    li.innerHTML = `
+      <span class="chat-avatar" aria-hidden="true">😾</span>
+      <div class="chat-bubble">
+        <p>${escapeHtml(text)}</p>
+        <time class="chat-time" datetime="${new Date().toISOString()}">${timeStr}</time>
+      </div>`;
+  } else {
+    li.innerHTML = `
+      <span class="chat-avatar" aria-hidden="true">🧑</span>
+      <div class="chat-bubble">
+        <p>${escapeHtml(text)}</p>
+        <time class="chat-time" datetime="${new Date().toISOString()}">${timeStr}</time>
+      </div>`;
+  }
+
+  list.appendChild(li);
+  // Zum Ende scrollen
+  list.parentElement.scrollTop = list.parentElement.scrollHeight;
+  return li;
+}
+
+/**
+ * Zeigt den Tipp-Indikator (drei animierte Punkte) an.
+ * Gibt eine Funktion zurück, die ihn wieder entfernt.
+ *
+ * @param {HTMLElement} list - Die <ol> Nachrichtenliste
+ * @returns {Function} Cleanup-Funktion
+ */
+function showTypingIndicator(list) {
+  const li = document.createElement('li');
+  li.className = 'chat-message chat-message--bot chat-message--typing';
+  li.setAttribute('aria-label', 'Grumpy Cat tippt…');
+  li.innerHTML = `
+    <span class="chat-avatar" aria-hidden="true">😾</span>
+    <div class="chat-bubble">
+      <span class="typing-dot" aria-hidden="true"></span>
+      <span class="typing-dot" aria-hidden="true"></span>
+      <span class="typing-dot" aria-hidden="true"></span>
+    </div>`;
+  list.appendChild(li);
+  list.parentElement.scrollTop = list.parentElement.scrollHeight;
+  return () => li.remove();
+}
+
+/**
+ * Einfaches HTML-Escaping gegen XSS.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+
+/* ============================================================
+   5. GRUMPY-BOT: GEDULDS-ANZEIGE
+   Sinkt mit jeder Nachricht des Nutzers.
+   Steigt leicht an, wenn der Bot antwortet.
+   ============================================================ */
+
+/** Aktueller Gedulds-Wert (0–100) */
+let patienceLevel = 20;
+
+/**
+ * Aktualisiert die Gedulds-Anzeige im Header.
+ * @param {number} delta - Änderung (positiv = mehr Geduld, negativ = weniger)
+ */
+function updatePatience(delta) {
+  patienceLevel = Math.max(0, Math.min(100, patienceLevel + delta));
+
+  const fill = qs('#patience-fill');
+  const text = qs('#patience-text');
+  const bar  = qs('.patience-bar');
+  if (!fill || !text || !bar) return;
+
+  fill.style.width = `${patienceLevel}%`;
+  bar.setAttribute('aria-valuenow', patienceLevel);
+
+  // Farbe und Label je nach Level
+  if (patienceLevel <= 15) {
+    fill.style.background = '#e05252';
+    text.textContent = 'am Ende';
+  } else if (patienceLevel <= 35) {
+    fill.style.background = '#e07a52';
+    text.textContent = 'niedrig';
+  } else if (patienceLevel <= 60) {
+    fill.style.background = '#d4b84a';
+    text.textContent = 'mittel';
+  } else {
+    fill.style.background = '#52a852';
+    text.textContent = 'okay';
+  }
+}
+
+
+/* ============================================================
+   6. GRUMPY-BOT: CHAT-LOGIK
+   Verarbeitet Eingaben, zeigt Tipp-Indikator, sendet Antworten.
+   ============================================================ */
+
+/**
+ * Initialisiert den Chat: Form-Submit, Enter-Taste, Gedulds-Start.
+ */
+function initChat() {
+  const form     = qs('#chat-form');
+  const input    = qs('#chat-input');
+  const msgList  = qs('#chat-messages');
+
+  if (!form || !input || !msgList) return;
+
+  // Gedulds-Anzeige initialisieren
+  updatePatience(0);
+
+  on(form, 'submit', (e) => {
+    e.preventDefault();
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Nutzernachricht anzeigen
+    appendMessage(text, 'user', msgList);
+    input.value = '';
+    input.focus();
+
+    // Geduld sinkt mit jeder Nachricht
+    updatePatience(-8);
+
+    // Tipp-Indikator anzeigen, dann nach kurzer Verzögerung antworten
+    const removeTyping = showTypingIndicator(msgList);
+
+    // Verzögerung: wirkt natürlicher (600–1200ms)
+    const delay = 600 + Math.random() * 600;
+
+    setTimeout(() => {
+      removeTyping();
+      const reply = getBotReply(text);
+      appendMessage(reply, 'bot', msgList);
+      // Geduld erholt sich minimal nach jeder Antwort
+      updatePatience(2);
+    }, delay);
   });
 }
 
 
 /* ============================================================
-   4. FOOTER YEAR
-   Automatically keeps the copyright year current.
+   7. FOOTER-JAHR
+   Hält das Copyright-Jahr aktuell.
    ============================================================ */
 
-/**
- * Insert the current year into #footer-year.
- */
 function initFooterYear() {
   const el = qs('#footer-year');
-  if (el) {
-    el.textContent = new Date().getFullYear();
-  }
+  if (el) el.textContent = new Date().getFullYear();
 }
 
 
 /* ============================================================
-   5. CONTACT FORM VALIDATION
-   Client-side validation before submit.
-   Returns true if valid, false if errors were found.
+   8. INITIALISIERUNG
+   Alle Module werden hier gestartet.
    ============================================================ */
 
-/**
- * Simple email regex — good enough for client-side hints.
- * Server-side validation is always required for real security.
- */
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/**
- * Show an error message for a given field.
- * @param {HTMLElement} input   - The input element
- * @param {string}      message - Error text to display
- */
-function showFieldError(input, message) {
-  const errorEl = qs(`#${input.getAttribute('aria-describedby')}`);
-  input.classList.add('is-invalid');
-  input.setAttribute('aria-invalid', 'true');
-  if (errorEl) errorEl.textContent = message;
-}
-
-/**
- * Clear the error state for a given field.
- * @param {HTMLElement} input - The input element
- */
-function clearFieldError(input) {
-  const errorEl = qs(`#${input.getAttribute('aria-describedby')}`);
-  input.classList.remove('is-invalid');
-  input.removeAttribute('aria-invalid');
-  if (errorEl) errorEl.textContent = '';
-}
-
-/**
- * Validate the contact form fields.
- * @param {HTMLFormElement} form
- * @returns {boolean} True if all fields are valid
- */
-function validateContactForm(form) {
-  let valid = true;
-
-  const nameInput    = qs('#field-name',    form);
-  const emailInput   = qs('#field-email',   form);
-  const messageInput = qs('#field-message', form);
-
-  // Clear previous errors
-  [nameInput, emailInput, messageInput].forEach(clearFieldError);
-
-  // Validate: name
-  if (!nameInput.value.trim()) {
-    showFieldError(nameInput, 'Please enter your full name.');
-    valid = false;
-  }
-
-  // Validate: email
-  if (!emailInput.value.trim()) {
-    showFieldError(emailInput, 'Please enter your email address.');
-    valid = false;
-  } else if (!EMAIL_REGEX.test(emailInput.value.trim())) {
-    showFieldError(emailInput, 'Please enter a valid email address.');
-    valid = false;
-  }
-
-  // Validate: message
-  if (!messageInput.value.trim()) {
-    showFieldError(messageInput, 'Please enter a message.');
-    valid = false;
-  } else if (messageInput.value.trim().length < 10) {
-    showFieldError(messageInput, 'Message must be at least 10 characters.');
-    valid = false;
-  }
-
-  // Focus the first invalid field for accessibility
-  if (!valid) {
-    const firstInvalid = qs('.form-input.is-invalid', form);
-    if (firstInvalid) firstInvalid.focus();
-  }
-
-  return valid;
-}
-
-/**
- * Show the form status message.
- * @param {HTMLElement} statusEl - The #form-status element
- * @param {'success'|'error'} type
- * @param {string} message
- */
-function showFormStatus(statusEl, type, message) {
-  statusEl.textContent = message;
-  statusEl.className   = `form-status is-${type}`;
-  statusEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-/**
- * Initialise the contact form.
- * Hooks validation to the submit event.
- * The actual submission is a placeholder — wire up to your backend
- * or a form service (Formspree, Netlify Forms, etc.) as needed.
- */
-function initContactForm() {
-  const form     = qs('#contact-form');
-  if (!form) return;
-
-  const statusEl = qs('#form-status', form);
-  const submitBtn = qs('[type="submit"]', form);
-
-  // Clear individual field errors as the user types
-  qsa('.form-input', form).forEach(input => {
-    on(input, 'input', () => clearFieldError(input));
-  });
-
-  on(form, 'submit', async (e) => {
-    e.preventDefault();
-
-    // Run validation; stop if invalid
-    if (!validateContactForm(form)) return;
-
-    // Disable the submit button to prevent double-submit
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending…';
-
-    try {
-      /*
-       * REPLACE THIS BLOCK with your actual form submission logic.
-       *
-       * Examples:
-       *   — Formspree: fetch('https://formspree.io/f/YOUR_ID', { method:'POST', ... })
-       *   — Netlify:   Remove action="#", add netlify attribute to <form>
-       *   — Custom:    fetch('/api/contact', { method:'POST', body: new FormData(form) })
-       *
-       * Simulating a successful async submit:
-       */
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
-
-      // On success:
-      showFormStatus(statusEl, 'success', 'Thanks! Your message has been sent.');
-      form.reset();
-
-    } catch (err) {
-      // On error:
-      console.error('[Form] Submission error:', err);
-      showFormStatus(statusEl, 'error', 'Something went wrong. Please try again.');
-
-    } finally {
-      // Always re-enable the submit button
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Send message';
-    }
-  });
-}
-
-
-/* ============================================================
-   6. SMOOTH SCROLL FOR ANCHOR LINKS
-   Provides smooth scrolling that accounts for the sticky header.
-   Falls back gracefully if the target element is not found.
-   ============================================================ */
-
-/**
- * Calculate the height of the sticky header so we can
- * offset scroll targets by that amount.
- * @returns {number} Height in pixels
- */
-function getStickyHeaderOffset() {
-  const header = qs('.site-header');
-  return header ? header.offsetHeight : 0;
-}
-
-/**
- * Bind click handlers to all same-page anchor links.
- * Scrolls smoothly to the target and updates focus.
- */
-function initSmoothScroll() {
-  on(document, 'click', (e) => {
-    const link = e.target.closest('a[href^="#"]');
-    if (!link) return;
-
-    const href   = link.getAttribute('href');
-    const target = qs(href);
-    if (!target) return;
-
-    e.preventDefault();
-
-    const offset = getStickyHeaderOffset() + 16; // extra breathing room
-    const targetY = target.getBoundingClientRect().top + window.scrollY - offset;
-
-    window.scrollTo({ top: targetY, behavior: 'smooth' });
-
-    // Update URL without jumping
-    history.pushState(null, '', href);
-
-    // Move focus to the target section for keyboard users
-    // (tabIndex=-1 allows focus without making it tab-able)
-    target.setAttribute('tabindex', '-1');
-    target.focus({ preventScroll: true });
-    // Clean up tabindex after focus leaves
-    on(target, 'blur', () => target.removeAttribute('tabindex'), { once: true });
-  });
-}
-
-
-/* ============================================================
-   7. ACTIVE NAV LINK HIGHLIGHTING
-   Uses IntersectionObserver to highlight the nav link that
-   corresponds to the currently visible section.
-   ============================================================ */
-
-/**
- * Watch sections with IDs and mark the corresponding nav link
- * as aria-current="page" when the section is in the viewport.
- */
-function initActiveNav() {
-  // Only sections that have an id can be tracked
-  const sections = Array.from(qsa('section[id]'));
-  const navLinks = Array.from(qsa('.nav-link[href^="#"]'));
-
-  if (sections.length === 0 || navLinks.length === 0) return;
-
-  const headerOffset = getStickyHeaderOffset();
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-
-        const id = entry.target.id;
-        navLinks.forEach(link => {
-          const isActive = link.getAttribute('href') === `#${id}`;
-          link.setAttribute('aria-current', isActive ? 'page' : 'false');
-        });
-      });
-    },
-    {
-      // Trigger when a section crosses into the viewport accounting for the sticky header
-      rootMargin: `-${headerOffset + 1}px 0px -60% 0px`,
-      threshold: 0,
-    }
-  );
-
-  sections.forEach(section => observer.observe(section));
-}
-
-
-/* ============================================================
-   8. INITIALISATION ENTRY POINT
-   All feature modules are called from here.
-   ============================================================ */
-
-/**
- * Main initialisation function.
- * Called once the DOM is fully loaded.
- */
 function init() {
   initFooterYear();
-  initMobileNav();
-  initSmoothScroll();
-  initContactForm();
-  initActiveNav();
+  initChat();
 
-  // Log confirmation in development — remove or guard behind a flag for production
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('[App] Initialised successfully.');
+    console.log('[Grumpy Cat] Initialisiert. Nicht begeistert, aber initialisiert.');
   }
 }
 
-/*
-  Wait for the DOM to be fully parsed before running init().
-  'DOMContentLoaded' fires after HTML is parsed but before
-  images/stylesheets are loaded — ideal for JS initialisation.
-*/
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
-  // DOM already ready (e.g. script loaded with defer/async)
   init();
 }
-
-
-/* ============================================================
-   EXTENSION EXAMPLES
-   The patterns below are NOT active — they are reference
-   snippets you can copy and adapt when extending this file.
-   ============================================================ */
-
-/*
-  --- EXAMPLE: LocalStorage persistence ---
-
-  function saveToStorage(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (err) {
-      console.warn('[Storage] Write failed:', err);
-    }
-  }
-
-  function loadFromStorage(key, fallback = null) {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw !== null ? JSON.parse(raw) : fallback;
-    } catch (err) {
-      console.warn('[Storage] Read failed:', err);
-      return fallback;
-    }
-  }
-
-  Usage:
-    saveToStorage('user-preferences', { theme: 'dark' });
-    const prefs = loadFromStorage('user-preferences', {});
-*/
-
-
-/*
-  --- EXAMPLE: Fetch / API call helper ---
-
-  async function fetchJSON(url, options = {}) {
-    const response = await fetch(url, {
-      headers: { 'Accept': 'application/json', ...options.headers },
-      ...options,
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-  }
-
-  Usage:
-    const data = await fetchJSON('https://api.example.com/items');
-*/
-
-
-/*
-  --- EXAMPLE: Simple event bus (publish/subscribe) ---
-
-  const bus = {
-    _listeners: {},
-    on(event, fn)   { (this._listeners[event] ??= []).push(fn); },
-    off(event, fn)  { this._listeners[event] = (this._listeners[event] || []).filter(f => f !== fn); },
-    emit(event, data) { (this._listeners[event] || []).forEach(fn => fn(data)); },
-  };
-
-  Usage:
-    bus.on('cart:updated', (cart) => renderCart(cart));
-    bus.emit('cart:updated', { items: [...] });
-*/
-
-
-/*
-  --- EXAMPLE: Dark mode toggle ---
-
-  function initDarkMode() {
-    const toggle = qs('#dark-mode-toggle');
-    if (!toggle) return;
-
-    const stored = loadFromStorage('color-scheme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialScheme = stored || (prefersDark ? 'dark' : 'light');
-
-    document.documentElement.dataset.colorScheme = initialScheme;
-    toggle.setAttribute('aria-pressed', String(initialScheme === 'dark'));
-
-    on(toggle, 'click', () => {
-      const isDark = document.documentElement.dataset.colorScheme === 'dark';
-      const next   = isDark ? 'light' : 'dark';
-      document.documentElement.dataset.colorScheme = next;
-      toggle.setAttribute('aria-pressed', String(next === 'dark'));
-      saveToStorage('color-scheme', next);
-    });
-  }
-
-  // Then add to CSS:
-  //   [data-color-scheme="dark"] { --color-bg: #0f172a; --color-text: #f8fafc; }
-*/

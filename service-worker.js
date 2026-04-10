@@ -40,7 +40,7 @@
    ───────────────────────────────────────────── */
 
 /** Change this string whenever you deploy updated assets. */
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'grumpy-v1';
 
 /** Unique cache name for this version of the app. */
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
