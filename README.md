@@ -289,7 +289,7 @@ git push -u origin main
 **4. Wait ~60 seconds**, then visit:
 
 ```
-https://yourusername.github.io/your-repo/
+https://phroggar.github.io/GrumpyCat
 ```
 
 ### Path considerations
